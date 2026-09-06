@@ -65,6 +65,16 @@ class DocumentRequest(BaseModel):
 # --------------------------------------------------------------------------
 
 
+class OCRTable(BaseModel):
+    """A table recovered from a document, as a rectangular grid of cell text."""
+
+    page: int = Field(default=1, ge=1)
+    row_count: int = Field(default=0, ge=0)
+    column_count: int = Field(default=0, ge=0)
+    mean_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    rows: list[list[str]] = Field(default_factory=list)
+
+
 class OCRResult(BaseModel):
     """Text extracted from a document."""
 
@@ -73,6 +83,9 @@ class OCRResult(BaseModel):
     text: str = ""
     mean_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
     language: Optional[str] = None
+    # Empty for backends without table support. Defaulted, so older callers
+    # and stored results stay valid.
+    tables: list[OCRTable] = Field(default_factory=list)
 
 
 class ComplianceFinding(BaseModel):

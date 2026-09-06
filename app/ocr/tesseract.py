@@ -81,6 +81,9 @@ class TesseractBackend(OCRBackend):
             page_count=len(images),
             mean_confidence=self.normalise_confidence(mean),
             language=settings.tesseract_lang,
+            # Tesseract has no table model. Empty, never None, so callers do
+            # not branch on which backend produced the result.
+            tables=[],
             backend=self.name,
             metadata={"scored_words": len(confidences), "dpi": settings.tesseract_dpi},
         )

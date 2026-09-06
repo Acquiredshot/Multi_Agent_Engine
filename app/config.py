@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     # Which OCRBackend implementation the ocr agent uses. See
     # app/ocr/registry.py for the registered names. Swapping this value is the
     # only change needed to move between dev and production extraction.
-    ocr_backend: str = "stub"
+    ocr_backend: str = "tesseract"
 
     # Guards against loading an unbounded document into worker memory.
     source_max_bytes: int = 50 * 1024 * 1024
@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     # it, such documents are rejected rather than silently truncated.
     textract_staging_bucket: Optional[str] = None
     textract_staging_prefix: str = "textract-staging/"
+    # TABLES uses AnalyzeDocument instead of DetectDocumentText: richer, and
+    # billed at a higher rate. Turn it off for plain text extraction.
+    textract_extract_tables: bool = True
     textract_poll_interval_s: float = 2.0
     textract_max_poll_s: int = 180
 

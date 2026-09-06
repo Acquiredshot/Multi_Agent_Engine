@@ -10,6 +10,8 @@ Two rules keep implementations interchangeable:
    reports (both Tesseract and Textract use 0-100).
 2. Vendor exceptions are translated into the shared taxonomy in `app.errors`,
    so retry behaviour does not depend on which backend is active.
+3. Optional capabilities degrade to empty, never to None. A backend with no
+   table support returns `tables=[]`, so callers never branch on the backend.
 """
 
 from abc import ABC, abstractmethod
@@ -17,6 +19,36 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar, Optional
 
 from app.sources import SourceDocument
+
+
+@dataclass(frozen=True)
+class Table:
+    """A reconstructed table, as a dense grid of cell text.
+
+    `rows` is always rectangular and padded with empty strings: a ragged grid
+    would push span handling onto every consumer.
+    """
+
+    rows: list[list[str]] = field(default_factory=list)
+    page: int = 1
+    mean_confidence: float = 0.0
+
+    @property
+    def row_count(self) -> int:
+        return len(self.rows)
+
+    @property
+    def column_count(self) -> int:
+        return len(self.rows[0]) if self.rows else 0
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.mean_confidence <= 1.0:
+            raise ValueError(
+                f"table mean_confidence must be 0.0-1.0, got {self.mean_confidence!r}"
+            )
+        widths = {len(r) for r in self.rows}
+        if len(widths) > 1:
+            raise ValueError(f"table rows are ragged: widths {sorted(widths)}")
 
 
 @dataclass(frozen=True)
@@ -31,6 +63,9 @@ class OCRExtraction:
     page_count: int
     mean_confidence: float
     language: Optional[str] = None
+    # Structured tables, when the backend supports them. Backends that do not
+    # return an empty list rather than None, so consumers need no special case.
+    tables: list[Table] = field(default_factory=list)
     backend: str = ""
     # Vendor-specific extras (job ids, block counts) for debugging. Never
     # relied on by the pipeline.

@@ -10,7 +10,7 @@ import logging
 from typing import Any
 
 from app.celery_app import celery_app
-from app.models import DocumentRequest, OCRResult
+from app.models import DocumentRequest, OCRResult, OCRTable
 from app.ocr import get_ocr_backend
 from app.sources import SourceDocument
 from app.tasks.base import TASK_DEFAULTS
@@ -53,11 +53,12 @@ def extract_text(self, payload: dict[str, Any]) -> dict[str, Any]:
 
     logger.info(
         "ocr.extract_text done document_id=%s backend=%s pages=%d chars=%d "
-        "confidence=%.3f",
+        "tables=%d confidence=%.3f",
         request.document_id,
         extraction.backend or backend.name,
         extraction.page_count,
         len(extraction.text),
+        len(extraction.tables),
         extraction.mean_confidence,
     )
 
@@ -67,5 +68,15 @@ def extract_text(self, payload: dict[str, Any]) -> dict[str, Any]:
         text=extraction.text,
         mean_confidence=extraction.mean_confidence,
         language=extraction.language,
+        tables=[
+            OCRTable(
+                page=t.page,
+                row_count=t.row_count,
+                column_count=t.column_count,
+                mean_confidence=t.mean_confidence,
+                rows=t.rows,
+            )
+            for t in extraction.tables
+        ],
     )
     return result.model_dump(mode="json")

@@ -28,6 +28,7 @@ class StubBackend(OCRBackend):
             page_count=0,
             mean_confidence=0.0,
             language=None,
+            tables=[],
             backend=self.name,
             metadata={"stub": True, "uri": document.uri},
         )

@@ -11,7 +11,7 @@ x-topology-env: &topology-env
   # Kept in step with the OCR_BACKEND build arg below, both read from the same
   # host variable, so one value selects the image's dependency layer and the
   # strategy the worker loads. Set it in .env: OCR_BACKEND=tesseract.
-  OCR_BACKEND: ${OCR_BACKEND:-stub}
+  OCR_BACKEND: ${OCR_BACKEND:-tesseract}
   # Blanked deliberately: an inline password in .env would otherwise be
   # injected here and become visible in `docker inspect`. The mounted secret
   # above is the only credential source inside a container.
@@ -21,7 +21,7 @@ x-app: &app
   build:
     context: .
     args:
-      OCR_BACKEND: ${OCR_BACKEND:-stub}
+      OCR_BACKEND: ${OCR_BACKEND:-tesseract}
   env_file:
     # Optional local overrides (LOG_LEVEL, DEBUG, task limits...). Absent by
     # default, and never baked into the image.

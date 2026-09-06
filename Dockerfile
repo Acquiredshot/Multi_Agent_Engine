@@ -7,7 +7,7 @@ FROM python:3.13-slim
 # Which OCR strategy this image is built for. Selects both the system packages
 # and the optional Python dependency layer, and is the runtime default. Keep it
 # in step with the OCR_BACKEND environment variable.
-ARG OCR_BACKEND=stub
+ARG OCR_BACKEND=tesseract
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
