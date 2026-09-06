@@ -257,6 +257,8 @@ curl -s -X POST localhost:8000/documents \
 
 Interactive API docs at `localhost:8000/docs`.
 
+The project now includes a verified FastAPI layer in addition to the Celery worker stack. The API is the public entry point for the workflow engine: it accepts a document, enqueues the analysis, and exposes a single task id for polling. This layer is intentionally thin and delegates all orchestration to the Celery dispatch functions in `app/dispatch.py`.
+
 ## API
 
 | Method | Path | Purpose |
@@ -305,8 +307,21 @@ detection now return real schema-valid results via a lightweight LangGraph-style
 workflow layer, with a plain-Python fallback so the service remains stable if the
 optional graph dependency is unavailable.
 
-The Textract backend's call paths are covered by tests against a faked boto3
-client, but have **not yet been exercised against live AWS**.
+The FastAPI layer is fully wired into the same dispatch model. It exposes the
+main workflow endpoints for health checks, document submission, and async task
+status polling, and those endpoints are covered by API-level regression tests.
+
+The project now includes lightweight test coverage for both the workflow logic
+and the API surface:
+
+```bash
+.venv\Scripts\python.exe -m pytest -q
+```
+
+This validates the engine remains stable after changes to the runtime stack,
+worker setup, and HTTP routing. The Textract backend's call paths are covered
+by tests against a faked boto3 client, but have **not yet been exercised
+against live AWS**.
 
 ## Layout
 
