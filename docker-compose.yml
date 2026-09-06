@@ -1,0 +1,116 @@
+# Shared building blocks. Anchors keep the four app services from repeating
+# the same env, mounts and dependency rules.
+
+# Values fixed by the compose topology. These sit in `environment:`, which
+# takes precedence over `env_file:`, so a stray REDIS_HOST in .env cannot
+# point a container at the wrong Redis.
+x-topology-env: &topology-env
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_PASSWORD_FILE: /run/secrets/redis_password
+  # Kept in step with the OCR_BACKEND build arg below, both read from the same
+  # host variable, so one value selects the image's dependency layer and the
+  # strategy the worker loads. Set it in .env: OCR_BACKEND=tesseract.
+  OCR_BACKEND: ${OCR_BACKEND:-stub}
+  # Blanked deliberately: an inline password in .env would otherwise be
+  # injected here and become visible in `docker inspect`. The mounted secret
+  # above is the only credential source inside a container.
+  REDIS_PASSWORD: ""
+
+x-app: &app
+  build:
+    context: .
+    args:
+      OCR_BACKEND: ${OCR_BACKEND:-stub}
+  env_file:
+    # Optional local overrides (LOG_LEVEL, DEBUG, task limits...). Absent by
+    # default, and never baked into the image.
+    - path: .env
+      required: false
+  environment: *topology-env
+  secrets:
+    - redis_password
+  volumes:
+    # Source is mounted so --reload sees host edits; drop for prod.
+    - ./app:/srv/app:ro
+  depends_on:
+    redis:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: mae_redis
+    # sh -c because redis-server cannot read --requirepass from a file itself.
+    command:
+      - sh
+      - -c
+      - exec redis-server --appendonly yes --requirepass "$$(cat /run/secrets/redis_password)"
+    ports:
+      # Loopback only; the password is the second line of defence, not the first.
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    secrets:
+      - redis_password
+    healthcheck:
+      # -a so the ping authenticates; otherwise it fails with NOAUTH.
+      test:
+        - CMD-SHELL
+        - redis-cli -a "$$(cat /run/secrets/redis_password)" --no-auth-warning ping | grep -q PONG
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    <<: *app
+    container_name: mae_api
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status == 200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  worker_ocr:
+    <<: *app
+    command: >
+      celery -A app.celery_app.celery_app worker
+      --loglevel=INFO
+      --queues=ocr,default
+      --concurrency=2
+      --hostname=ocr@%h
+
+  worker_compliance:
+    <<: *app
+    command: >
+      celery -A app.celery_app.celery_app worker
+      --loglevel=INFO
+      --queues=compliance,default
+      --concurrency=2
+      --hostname=compliance@%h
+
+  worker_anomaly:
+    <<: *app
+    command: >
+      celery -A app.celery_app.celery_app worker
+      --loglevel=INFO
+      --queues=anomaly,default
+      --concurrency=2
+      --hostname=anomaly@%h
+
+secrets:
+  redis_password:
+    file: ./secrets/redis_password
+
+volumes:
+  redis_data:

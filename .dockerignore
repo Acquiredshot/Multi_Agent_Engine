@@ -1,0 +1,28 @@
+# The venv is a Windows CPython 3.14 build: useless in a Linux image, and it
+# would shadow the packages installed by pip.
+.venv/
+venv/
+
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# Secrets stay out of the image. They arrive at runtime as environment
+# variables, or mounted under /run/secrets.
+.env
+.env.*
+secrets/
+
+*.md
+scratch/
+.vscode/
+.idea/

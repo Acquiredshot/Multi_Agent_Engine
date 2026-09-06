@@ -1,0 +1,11 @@
+# Normalise to LF on checkout everywhere. This project builds and runs in
+# Linux containers: CRLF in the Dockerfile would break the backslash line
+# continuations in its RUN steps, and CRLF in docker-compose.yml commands or
+# the mounted Python sources causes the same class of "works on my machine"
+# failure after a clone on Windows.
+* text=auto eol=lf
+
+# Never let Git rewrite bytes in credentials or binaries.
+secrets/* -text
+*.png binary
+*.pdf binary
