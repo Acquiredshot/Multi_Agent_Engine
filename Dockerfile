@@ -28,12 +28,9 @@ RUN set -eux; \
 
 # Dependencies before application code, so editing app/ does not invalidate the
 # (slow) install layers.
-COPY requirements.txt requirements-tesseract.txt requirements-textract.txt ./
+COPY requirements.txt ./
 RUN set -eux; \
-    pip install -r requirements.txt; \
-    if [ -f "requirements-$OCR_BACKEND.txt" ]; then \
-        pip install -r "requirements-$OCR_BACKEND.txt"; \
-    fi
+    pip install -r requirements.txt
 
 # Celery refuses to run its worker as root without an explicit override, and
 # neither service needs to write into the image.

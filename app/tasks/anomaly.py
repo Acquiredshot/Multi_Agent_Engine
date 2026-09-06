@@ -3,11 +3,20 @@
 import logging
 from typing import Any, Optional
 
+from app.agents.langgraph_agents import run_anomaly_agent
 from app.celery_app import celery_app
 from app.models import AnomalyResult, DocumentRequest, OCRResult
 from app.tasks.base import TASK_DEFAULTS
 
 logger = logging.getLogger(__name__)
+
+
+def run_anomaly_task(request: DocumentRequest, ocr: Optional[OCRResult]) -> AnomalyResult:
+    """Execute the anomaly workflow for a document."""
+    return run_anomaly_agent(request, ocr)
+
+
+run_anomaly_agent_task = run_anomaly_task
 
 
 @celery_app.task(name="anomaly.detect_anomalies", **TASK_DEFAULTS)
@@ -36,17 +45,11 @@ def detect_anomalies(
         self.request.retries + 1,
     )
 
-    # TODO: implement. Score ocr.text / document features and record a reason
-    # string per contributing signal.
-    logger.warning(
-        "anomaly.detect_anomalies is a stub; reporting score 0.0 for document_id=%s",
+    result = run_anomaly_task(request, ocr)
+    logger.info(
+        "anomaly.detect_anomalies completed document_id=%s score=%.4f anomalous=%s",
         request.document_id,
+        result.anomaly_score,
+        result.is_anomalous,
     )
-    result = AnomalyResult(
-        document_id=request.document_id,
-        anomaly_score=0.0,
-        is_anomalous=False,
-        reasons=[],
-    )
-
     return result.model_dump(mode="json")

@@ -8,6 +8,10 @@ x-topology-env: &topology-env
   REDIS_HOST: redis
   REDIS_PORT: "6379"
   REDIS_PASSWORD_FILE: /run/secrets/redis_password
+  RABBITMQ_HOST: rabbitmq
+  RABBITMQ_PORT: "5672"
+  RABBITMQ_USER: guest
+  RABBITMQ_PASSWORD_FILE: /run/secrets/rabbitmq_password
   # Kept in step with the OCR_BACKEND build arg below, both read from the same
   # host variable, so one value selects the image's dependency layer and the
   # strategy the worker loads. Set it in .env: OCR_BACKEND=tesseract.
@@ -16,6 +20,7 @@ x-topology-env: &topology-env
   # injected here and become visible in `docker inspect`. The mounted secret
   # above is the only credential source inside a container.
   REDIS_PASSWORD: ""
+  RABBITMQ_PASSWORD: ""
 
 x-app: &app
   build:
@@ -30,11 +35,14 @@ x-app: &app
   environment: *topology-env
   secrets:
     - redis_password
+    - rabbitmq_password
   volumes:
     # Source is mounted so --reload sees host edits; drop for prod.
     - ./app:/srv/app:ro
   depends_on:
     redis:
+      condition: service_healthy
+    rabbitmq:
       condition: service_healthy
   restart: unless-stopped
 
@@ -62,6 +70,22 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: mae_rabbitmq
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
   api:
@@ -111,6 +135,8 @@ services:
 secrets:
   redis_password:
     file: ./secrets/redis_password
+  rabbitmq_password:
+    file: ./secrets/rabbitmq_password
 
 volumes:
   redis_data:

@@ -1,6 +1,0 @@
-# Optional dependency layer for OCR_BACKEND=tesseract.
-# Also needs the tesseract-ocr and poppler-utils system packages; the
-# Dockerfile installs those when built with --build-arg OCR_BACKEND=tesseract.
-pytesseract>=0.3.10
-pdf2image>=1.17.0
-Pillow>=10.2.0

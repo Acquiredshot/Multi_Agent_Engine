@@ -3,11 +3,20 @@
 import logging
 from typing import Any, Optional
 
+from app.agents.langgraph_agents import run_compliance_agent
 from app.celery_app import celery_app
 from app.models import ComplianceResult, DocumentRequest, OCRResult
 from app.tasks.base import TASK_DEFAULTS
 
 logger = logging.getLogger(__name__)
+
+
+def run_compliance_task(request: DocumentRequest, ocr: Optional[OCRResult]) -> ComplianceResult:
+    """Execute the compliance workflow for a document."""
+    return run_compliance_agent(request, ocr)
+
+
+run_compliance_agent_task = run_compliance_task
 
 
 @celery_app.task(name="compliance.check_compliance", **TASK_DEFAULTS)
@@ -36,18 +45,11 @@ def check_compliance(
         self.request.retries + 1,
     )
 
-    # TODO: implement. Evaluate the rule set against ocr.text (falling back to
-    # fetching request.source_uri when ocr is None) and append a
-    # ComplianceFinding per violation.
-    logger.warning(
-        "compliance.check_compliance is a stub; reporting pass for document_id=%s",
+    result = run_compliance_task(request, ocr)
+    logger.info(
+        "compliance.check_compliance completed document_id=%s findings=%d passed=%s",
         request.document_id,
+        len(result.findings),
+        result.passed,
     )
-    result = ComplianceResult(
-        document_id=request.document_id,
-        passed=True,
-        findings=[],
-        rules_evaluated=0,
-    )
-
     return result.model_dump(mode="json")

@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     api_prefix: str = ""
 
     # --- broker / result backend ---
+    rabbitmq_host: str = "rabbitmq"
+    rabbitmq_port: int = 5672
+    rabbitmq_user: str = "guest"
+    rabbitmq_password: Optional[str] = None
+    rabbitmq_password_file: Optional[str] = None
     redis_host: str = "redis"
     redis_port: int = 6379
     redis_db: int = 0
@@ -116,9 +121,29 @@ class Settings(BaseSettings):
         return f"redis://{auth}{self.redis_host}:{self.redis_port}/{db}"
 
     @property
+    def resolved_rabbitmq_password(self) -> Optional[str]:
+        """RabbitMQ password, preferring a mounted secret file when configured."""
+        if self.rabbitmq_password_file:
+            path = Path(self.rabbitmq_password_file)
+            try:
+                secret = path.read_text(encoding="utf-8").strip()
+            except OSError as exc:
+                raise RuntimeError(
+                    f"rabbitmq_password_file {path} could not be read: {exc}"
+                ) from exc
+            if not secret:
+                raise RuntimeError(f"rabbitmq_password_file {path} is empty")
+            return secret
+        return self.rabbitmq_password or "guest"
+
+    @property
     def broker_url(self) -> str:
-        """Redis URL used by Celery as the message broker."""
-        return self._redis_url(self.redis_db)
+        """AMQP URL used by Celery as the message broker."""
+        password = self.resolved_rabbitmq_password
+        auth = f"{quote(self.rabbitmq_user, safe='')}:{quote(password, safe='')}@" if password else ""
+        if self.rabbitmq_user == "guest" and not password:
+            auth = "guest:guest@"
+        return f"amqp://{auth}{self.rabbitmq_host}:{self.rabbitmq_port}//"
 
     @property
     def result_backend_url(self) -> str:
@@ -128,8 +153,8 @@ class Settings(BaseSettings):
     @property
     def safe_broker_url(self) -> str:
         """`broker_url` with any password masked, for logs and error messages."""
-        if self.resolved_redis_password:
-            return f"redis://:***@{self.redis_host}:{self.redis_port}/{self.redis_db}"
+        if self.resolved_rabbitmq_password and self.rabbitmq_password:
+            return f"amqp://{self.rabbitmq_user}:***@{self.rabbitmq_host}:{self.rabbitmq_port}//"
         return self.broker_url
 
 

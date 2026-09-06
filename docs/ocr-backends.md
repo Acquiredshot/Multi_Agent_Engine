@@ -57,8 +57,8 @@ is **rejected with a clear error** rather than silently truncated.
 1. Subclass `OCRBackend` in `app/ocr/yourvendor.py`, implementing `extract()`
    and — if it has dependencies or credentials — `check_ready()`.
 2. Add one line to `BACKENDS` in `app/ocr/registry.py`.
-3. If it needs extra packages, add `requirements-yourvendor.txt`; the
-   Dockerfile installs `requirements-$OCR_BACKEND.txt` when present.
+3. Add any required Python package to the shared `requirements.txt` so local
+   development and the Docker image stay aligned.
 
 Nothing else changes. Two contracts make implementations interchangeable:
 
