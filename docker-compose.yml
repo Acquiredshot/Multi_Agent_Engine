@@ -21,6 +21,8 @@ x-topology-env: &topology-env
   # above is the only credential source inside a container.
   REDIS_PASSWORD: ""
   RABBITMQ_PASSWORD: ""
+  # Base port for the per-worker Prometheus exporters (see app/metrics.py).
+  PROMETHEUS_METRICS_PORT: "8001"
 
 x-app: &app
   build:
@@ -81,6 +83,12 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      # Enables the official Prometheus plugin (metrics on :15692) in addition
+      # to the management plugin, without changing the image.
+      - ./monitoring/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      # Enables per-object (per-queue) Prometheus metrics.
+      - ./monitoring/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -132,6 +140,95 @@ services:
       --concurrency=2
       --hostname=anomaly@%h
 
+  # ---------------------------------------------------------------------------
+  # Monitoring stack
+  # ---------------------------------------------------------------------------
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mae_prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: mae_redis_exporter
+    environment:
+      # The exporter needs the Redis password as a JSON map of address -> password
+      # (REDIS_PASSWORD_FILE); it cannot read the raw secret file and has no shell.
+      # monitoring/redis/passwords.json is generated from secrets/redis_password
+      # (git-ignored) — see README "Monitoring" for the exact command.
+      REDIS_ADDR: redis://redis:6379/0
+      REDIS_PASSWORD_FILE: /run/redis-passwords.json
+    volumes:
+      - ./monitoring/redis/passwords.json:/run/redis-passwords.json:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: mae_cadvisor
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mae_grafana
+    environment:
+      # Credentials come from the environment / .env — never hardcoded.
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/multi-agent-engine.json
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
 secrets:
   redis_password:
     file: ./secrets/redis_password
@@ -140,3 +237,5 @@ secrets:
 
 volumes:
   redis_data:
+  prometheus_data:
+  grafana_data:

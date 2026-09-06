@@ -226,6 +226,7 @@ The Docker stack now includes:
 - OCR worker
 - Compliance worker
 - Anomaly worker
+- Prometheus, Grafana, Redis exporter and cAdvisor (see [Monitoring](#monitoring))
 
 ```bash
 curl -s localhost:8000/health
@@ -339,8 +340,133 @@ app/
   models.py       request/response schemas
   sources.py      SourceDocument: URI resolution for file / http / s3
   errors.py       shared error taxonomy
+  metrics.py      Prometheus metrics + Celery signal instrumentation
   ocr/            pluggable OCR strategies
   tasks/          one module per agent, plus aggregation
+monitoring/
+  prometheus/         Prometheus scrape configuration
+  rabbitmq/           enabled_plugins (adds rabbitmq_prometheus)
+  grafana/
+    provisioning/     automatic datasource + dashboard provisioning
+    dashboards/       multi-agent-engine.json (the Grafana dashboard)
 docs/             design notes
 secrets/          one file per secret (git-ignored)
 ```
+
+## Monitoring
+
+Prometheus + Grafana observability for the whole stack: FastAPI HTTP metrics,
+custom application metrics, Celery worker metrics, RabbitMQ, Redis and
+container metrics.
+
+### Starting the complete stack
+
+The Redis exporter needs a JSON map of Redis address → password (its image has
+no shell, so it cannot read the raw secret file). Generate it once from the
+same secret file the app uses:
+
+```bash
+python -c "import json, pathlib; json.dump({'redis://redis:6379/0': pathlib.Path('secrets/redis_password').read_text().strip()}, pathlib.Path('monitoring/redis/passwords.json').open('w'))"
+```
+
+The file is git-ignored. Then start everything:
+
+```bash
+docker compose up -d --build
+```
+
+This starts the application services **and** the monitoring stack
+(`prometheus`, `grafana`, `redis-exporter`, `cadvisor`).
+
+### URLs
+
+| Service | URL |
+| --- | --- |
+| Frontend (Vite) | http://localhost:5173 |
+| FastAPI | http://localhost:8000 |
+| Swagger | http://localhost:8000/docs |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3000 |
+
+Grafana login: `GRAFANA_ADMIN_USER` / `GRAFANA_ADMIN_PASSWORD` from your `.env`
+(defaults `admin` / `admin`). Change them before exposing the stack anywhere
+but your local machine.
+
+### Metrics endpoint
+
+`GET http://localhost:8000/metrics` exposes:
+
+- HTTP metrics (`http_requests_total`, `http_request_duration_seconds`,
+  `http_requests_inprogress`) via prometheus-fastapi-instrumentator
+- Custom application metrics:
+  - `mae_documents_submitted_total` / `mae_documents_processed_total` /
+    `mae_documents_failed_total`
+  - `mae_task_processing_seconds` (end-to-end dispatch-to-aggregate duration)
+  - `mae_agent_tasks_total{agent="ocr|compliance|anomaly"}`
+
+Labels are bounded to `agent`; task ids, document ids and source URIs are
+**never** used as labels.
+
+Worker metrics (`mae_worker_tasks_started_total`, `mae_worker_tasks_completed_total`,
+`mae_worker_tasks_failed_total`, `mae_worker_task_duration_seconds`,
+`mae_active_tasks`) are exported by each Celery prefork child on its own port
+(`PROMETHEUS_METRICS_PORT` + child index, default `8001` → `8002`/`8003` for
+`--concurrency=2`).
+
+### How Prometheus discovers services
+
+Prometheus runs inside the compose network, so scrape targets use **Docker
+service names**, never `localhost` (see `monitoring/prometheus/prometheus.yml`):
+
+| Job | Target | Metrics |
+| --- | --- | --- |
+| `fastapi` | `api:8000` | HTTP + application metrics |
+| `celery-workers` | `worker_ocr:8002/8003`, `worker_compliance:8002/8003`, `worker_anomaly:8002/8003` | worker execution metrics |
+| `rabbitmq` | `rabbitmq:15692` | official `rabbitmq_prometheus` plugin |
+| `redis` | `redis-exporter:9121` | Redis exporter |
+| `cadvisor` | `cadvisor:8080` | container CPU / memory / network |
+
+If you change `--concurrency` in `docker-compose.yml`, update the
+`celery-workers` targets to match (`8002..8002+concurrency` per worker).
+
+### Accessing the dashboard
+
+Grafana provisions Prometheus as the default datasource and the
+"Multi-Agent Engine" dashboard automatically on startup — open
+http://localhost:3000 and log in. The dashboard has six sections:
+System Overview, Agent Overview, Queue Overview, Redis, Containers and
+Application.
+
+```bash
+docker compose ps                      # all services running?
+docker compose logs prometheus          # scrape / config errors
+docker compose logs grafana            # provisioning / login errors
+docker compose logs api                # API / metrics errors
+```
+
+### Troubleshooting common monitoring problems
+
+- **Prometheus targets DOWN** — open http://localhost:9090/targets and check
+  the error column. A target down usually means the underlying service is
+  still starting (worker exporters bind on first task execution), or the
+  target list drifted from `--concurrency` (see above).
+- **No RabbitMQ metrics** — confirm the plugin is enabled:
+  `docker compose exec rabbitmq rabbitmq-plugins list | grep prometheus`.
+  The `monitoring/rabbitmq/enabled_plugins` file is mounted read-only; edit
+  it and recreate the container to change plugins.
+- **Grafana shows "datasource not found"** — check
+  `docker compose logs grafana` for provisioning errors and confirm
+  `monitoring/grafana/provisioning/datasources/prometheus.yml` is mounted.
+- **Dashboard missing in Grafana** — the file provider watches
+  `/var/lib/grafana/dashboards`; confirm the mount is intact and the JSON is
+  valid. The dashboard reloads automatically within ~10s of a change.
+- **Empty Redis panels / `redis_up 0`** — check
+  `docker compose logs redis-exporter`. The exporter authenticates via
+  `monitoring/redis/passwords.json`; if that file is stale or missing, regenerate
+  it with the command above and run `docker compose up -d redis-exporter`.
+- **`/monitoring/status` shows "unknown" workers** — the API could not reach
+  the RabbitMQ management API on `rabbitmq:15672`; check the management
+  plugin and `RABBITMQ_USER`/`RABBITMQ_PASSWORD_FILE`.
+- **Container panels empty** — cAdvisor needs its host mounts and `privileged`
+  mode; on Docker Desktop these work out of the box, but check
+  `docker compose logs cadvisor` if panels stay empty.

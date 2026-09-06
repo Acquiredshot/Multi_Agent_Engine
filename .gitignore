@@ -5,6 +5,8 @@
 secrets/*
 !secrets/README.md
 !secrets/*.example
+# Generated from secrets/redis_password for the Redis exporter (JSON map).
+monitoring/redis/passwords.json
 
 .venv/
 venv/

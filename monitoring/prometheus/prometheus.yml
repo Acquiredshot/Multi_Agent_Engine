@@ -1,0 +1,45 @@
+# Prometheus configuration for the Multi-Agent Engine.
+# Scrape targets use Docker Compose service names — never localhost — because
+# Prometheus runs inside the same compose network.
+
+global:
+  scrape_interval: 5s
+  evaluation_interval: 10s
+
+scrape_configs:
+  # FastAPI: HTTP request metrics + custom mae_* application metrics.
+  - job_name: fastapi
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api:8000"]
+
+  # RabbitMQ official Prometheus plugin (enabled via enabled_plugins file).
+  - job_name: rabbitmq
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["rabbitmq:15692"]
+
+  # Redis exporter container.
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+
+  # cAdvisor container metrics.
+  - job_name: cadvisor
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["cadvisor:8080"]
+
+  # Celery workers. Each prefork child exports its own registry on
+  # PROMETHEUS_METRICS_PORT + child index (base 8001, concurrency 2 → 8002/8003).
+  # If --concurrency changes in docker-compose.yml, add/remove targets here.
+  - job_name: celery-workers
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - worker_ocr:8002
+          - worker_ocr:8003
+          - worker_compliance:8002
+          - worker_compliance:8003
+          - worker_anomaly:8002
+          - worker_anomaly:8003

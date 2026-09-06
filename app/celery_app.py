@@ -60,3 +60,8 @@ celery_app.conf.update(
     result_expires=settings.result_expires_s,
     result_extended=True,
 )
+
+# Imported for its side effects: registers the Celery signal handlers that
+# feed the worker Prometheus metrics, and the per-worker metrics HTTP servers
+# (see app/metrics.py). Both the API and the workers import this module.
+import app.metrics  # noqa: F401

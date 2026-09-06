@@ -27,6 +27,15 @@ class Settings(BaseSettings):
     debug: bool = False
     log_level: str = "INFO"
     api_prefix: str = ""
+    # Comma-separated list of origins allowed to call the API from a browser
+    # (the local Vite dev server, deployed frontends, ...). The Vite dev proxy
+    # makes same-origin requests, so this is only needed when the frontend
+    # talks to the API directly.
+    cors_origins: str = "http://localhost:5173"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
     # --- broker / result backend ---
     rabbitmq_host: str = "rabbitmq"

@@ -159,3 +159,32 @@ class ErrorResponse(BaseModel):
 
     detail: str
     code: Optional[str] = None
+
+
+class ComponentStatus(BaseModel):
+    """Health of one infrastructure component (api, broker, redis)."""
+
+    status: str
+    detail: Optional[str] = None
+
+
+class WorkerStatus(BaseModel):
+    """Health of one agent worker, inferred from its RabbitMQ consumers."""
+
+    status: str
+    detail: Optional[str] = None
+
+
+class MonitoringStatusResponse(BaseModel):
+    """Consolidated health for the monitoring page / System Health frontend.
+
+    Built from live checks (broker ping, redis ping, RabbitMQ management API)
+    rather than Prometheus, so the frontend never needs to query Prometheus
+    directly.
+    """
+
+    api: ComponentStatus
+    rabbitmq: ComponentStatus
+    redis: ComponentStatus
+    workers: dict[str, WorkerStatus]
+    checked_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

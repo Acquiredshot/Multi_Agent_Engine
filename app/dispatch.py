@@ -5,11 +5,13 @@ a running API.
 """
 
 import logging
+from datetime import datetime, timezone
 from typing import Any, Optional
 
 from celery import chain, chord, group
 from celery.result import AsyncResult
 
+from app import metrics
 from app.celery_app import celery_app
 from app.models import AgentName, DocumentRequest, TaskState, TaskStatusResponse
 from app.tasks.aggregate import collect, passthrough
@@ -40,11 +42,15 @@ def _build_canvas(request: DocumentRequest):
     agents = list(dict.fromkeys(request.agents))
     post_ocr = [a for a in agents if a in _POST_OCR_TASKS]
     has_ocr = AgentName.OCR in agents
+    # Stamped at dispatch so the aggregate task can measure end-to-end
+    # processing duration. Extra keys are ignored by DocumentRequest validation.
+    payload["_submitted_at"] = datetime.now(timezone.utc).isoformat()
+    submitted_at = payload["_submitted_at"]
 
     if request.pipeline and has_ocr:
         head = extract_text.s(payload)
         if not post_ocr:
-            return chain(head, collect.s(request.document_id))
+            return chain(head, collect.s(request.document_id, submitted_at))
         # Celery prepends the OCR result to each header task's arguments.
         # `passthrough` carries that OCR result into the chord body, which
         # otherwise only sees the results of its own header.
@@ -52,7 +58,7 @@ def _build_canvas(request: DocumentRequest):
         header += [_POST_OCR_TASKS[a].s(payload) for a in post_ocr]
         return chain(
             head,
-            chord(group(header), collect.s(request.document_id)),
+            chord(group(header), collect.s(request.document_id, submitted_at)),
         )
 
     if request.pipeline and not has_ocr:
@@ -65,13 +71,19 @@ def _build_canvas(request: DocumentRequest):
     header = [extract_text.s(payload)] if has_ocr else []
     # No upstream OCR result to prepend here, so pass None explicitly.
     header += [_POST_OCR_TASKS[a].s(None, payload) for a in post_ocr]
-    return chord(group(header), collect.s(request.document_id))
+    return chord(group(header), collect.s(request.document_id, submitted_at))
 
 
 def submit(request: DocumentRequest) -> str:
     """Enqueue a request and return the id of its terminal task."""
     canvas = _build_canvas(request)
     result = canvas.apply_async()
+
+    # Application metrics: count accepted documents and per-agent work.
+    metrics.documents_submitted.inc()
+    for agent in dict.fromkeys(request.agents):
+        metrics.agent_tasks_total.labels(agent.value).inc()
+
     logger.info(
         "dispatched document_id=%s task_id=%s agents=%s pipeline=%s",
         request.document_id,

@@ -6,8 +6,9 @@ track regardless of whether the agents ran chained or fanned out.
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Union
+from typing import Any, Optional, Union
 
+from app import metrics
 from app.celery_app import celery_app
 from app.models import AgentName
 
@@ -37,6 +38,7 @@ def passthrough(result: Any) -> Any:
 def collect(
     results: Union[list[Any], dict[str, Any], None],
     document_id: str,
+    submitted_at: Optional[str] = None,
 ) -> dict[str, Any]:
     """Merge the upstream agent results into a single response body.
 
@@ -44,10 +46,27 @@ def collect(
         results: A list of serialised agent results when this runs as a chord
             body, or a single result when only one agent ran ahead of it.
         document_id: The document these results belong to.
+        submitted_at: ISO timestamp stamped by dispatch.py, used to measure
+            end-to-end processing duration. Optional for backward compatibility.
 
     Returns:
         A dict keyed by agent name, plus the document id and completion time.
     """
+    try:
+        return _collect_impl(results, document_id, submitted_at)
+    except Exception:
+        # The task will be marked FAILURE; count the failed document here so
+        # the application metric lives next to its success counterpart.
+        metrics.documents_failed.inc()
+        raise
+
+
+def _collect_impl(
+    results: Union[list[Any], dict[str, Any], None],
+    document_id: str,
+    submitted_at: Optional[str] = None,
+) -> dict[str, Any]:
+    """Merge logic for ``aggregate.collect`` (see the task docstring)."""
     # A one-task chain hands over the bare result rather than a list.
     if results is None:
         results = []
@@ -87,4 +106,19 @@ def collect(
         document_id,
         sorted(merged["agents"]),
     )
+
+    # Application metrics: one processed document per successful aggregate.
+    metrics.documents_processed.inc()
+    if submitted_at:
+        try:
+            submitted = datetime.fromisoformat(submitted_at)
+            metrics.task_processing_seconds.observe(
+                max((datetime.now(timezone.utc) - submitted).total_seconds(), 0.0)
+            )
+        except ValueError:
+            logger.warning(
+                "aggregate.collect unparseable submitted_at=%r document_id=%s",
+                submitted_at,
+                document_id,
+            )
     return merged
