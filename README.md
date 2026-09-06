@@ -311,17 +311,22 @@ The FastAPI layer is fully wired into the same dispatch model. It exposes the
 main workflow endpoints for health checks, document submission, and async task
 status polling, and those endpoints are covered by API-level regression tests.
 
-The project now includes lightweight test coverage for both the workflow logic
-and the API surface:
+The project now includes lightweight test coverage for both the workflow logic,
+API surface, and RabbitMQ replay safety guard:
 
 ```bash
 .venv\Scripts\python.exe -m pytest -q
 ```
 
 This validates the engine remains stable after changes to the runtime stack,
-worker setup, and HTTP routing. The Textract backend's call paths are covered
-by tests against a faked boto3 client, but have **not yet been exercised
-against live AWS**.
+worker setup, HTTP routing, and poison-pill replay protection. The Textract
+backend's call paths are covered by tests against a faked boto3 client, but
+have **not yet been exercised against live AWS**.
+
+The Celery worker layer also includes a replay guard that inspects RabbitMQ's
+`x-death` header and aborts the message when it exceeds the configured replay
+limit. This prevents a message from looping endlessly through a dead-letter
+queue path and helps keep poison messages out of the workflow pipeline.
 
 ## Layout
 
