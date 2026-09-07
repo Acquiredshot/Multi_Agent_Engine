@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   AlertCircle,
@@ -22,15 +22,26 @@ const INITIAL_FORM = {
 
 /**
  * Document submission form. Posts to POST /documents and surfaces
- * loading / success / validation / API error states.
+ * loading (with simulated upload progress) / success / validation /
+ * API error states.
  */
 export default function DocumentUpload({ onSubmitted }) {
   const navigate = useNavigate()
   const [form, setForm] = useState(INITIAL_FORM)
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [progress, setProgress] = useState(0)
   const [apiError, setApiError] = useState(null)
   const [success, setSuccess] = useState(null)
+
+  // Fake-but-honest progress: fills while awaiting the API response.
+  useEffect(() => {
+    if (!submitting) return undefined
+    const timer = setInterval(() => {
+      setProgress((p) => (p < 8 ? 8 : p < 90 ? p + Math.max(1, (90 - p) * 0.08) : p))
+    }, 120)
+    return () => clearInterval(timer)
+  }, [submitting])
 
   const setField = (name, value) => {
     setForm((f) => ({ ...f, [name]: value }))
@@ -69,6 +80,7 @@ export default function DocumentUpload({ onSubmitted }) {
         agents: form.agents,
         pipeline: form.pipeline,
       })
+      setProgress(100)
       setSuccess(task)
       onSubmitted?.(task)
     } catch (err) {
@@ -83,34 +95,33 @@ export default function DocumentUpload({ onSubmitted }) {
     setSuccess(null)
     setApiError(null)
     setFieldErrors({})
+    setProgress(0)
   }
 
   // ---- Success state ----
   if (success) {
     return (
-      <div className="card border-emerald-500/30 p-6 sm:p-8">
+      <div className="panel border-emerald-500/25 p-5 sm:p-6">
         <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
-            <CheckCircle2 size={24} />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-400">
+            <CheckCircle2 size={20} />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-bold text-white">Document submitted</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Task accepted onto the queue. Track its progress on the Tasks page.
+            <h2 className="text-base font-bold text-slate-100">Document submitted</h2>
+            <p className="mt-1 text-xs text-slate-500">
+              Task accepted onto the queue. Track its progress below or on the Tasks page.
             </p>
-            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                Task ID
-              </p>
-              <p className="mt-1 break-all font-mono text-sm font-medium text-cyan-300">
+            <div className="mt-3 rounded border border-ink-700/70 bg-ink-950/70 p-3.5">
+              <p className="tlabel">Task ID</p>
+              <p className="mt-1 break-all font-mono text-sm font-medium text-emerald-300">
                 {success.task_id}
               </p>
               <p className="mt-2 text-[11px] text-slate-500">
-                Document: {success.document_id} · State:{" "}
-                <span className="uppercase">{success.state || "PENDING"}</span>
+                Document: <span className="font-mono text-slate-400">{success.document_id}</span> · State:{" "}
+                <span className="font-mono uppercase text-slate-400">{success.state || "PENDING"}</span>
               </p>
             </div>
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap gap-2.5">
               <button
                 type="button"
                 className="btn-primary"
@@ -132,29 +143,50 @@ export default function DocumentUpload({ onSubmitted }) {
 
   // ---- Form state ----
   return (
-    <form onSubmit={handleSubmit} className="card p-6 sm:p-8" noValidate>
+    <form onSubmit={handleSubmit} className="panel p-5 sm:p-6" noValidate>
       <div className="flex items-center gap-2">
-        <FileUp size={18} className="text-cyan-400" />
-        <h2 className="text-base font-bold text-white">Submit Document</h2>
+        <FileUp size={16} className="text-emerald-400" />
+        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-200">
+          Submit Document
+        </h2>
       </div>
-      <p className="mt-1 text-xs text-slate-500">
-        POST <span className="font-mono text-slate-400">{API_BASE_URL}/documents</span>
+      <p className="mt-1 font-mono text-[11px] text-slate-600">
+        POST {API_BASE_URL}/documents
       </p>
 
       {/* API error banner */}
       {apiError && (
-        <div className="mt-5 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
-          <XCircle size={18} className="mt-0.5 shrink-0" />
+        <div className="mt-4 flex items-start gap-3 rounded border border-red-500/25 bg-red-500/[0.06] p-3.5 text-sm text-red-300">
+          <XCircle size={16} className="mt-0.5 shrink-0" />
           <div className="min-w-0">
             <p className="font-semibold">Submission failed</p>
-            <p className="mt-0.5 break-words">{apiError}</p>
+            <p className="mt-0.5 break-words text-xs">{apiError}</p>
           </div>
         </div>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+      {/* Upload progress */}
+      {submitting && (
+        <div className="mt-4">
+          <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <Loader2 size={11} className="animate-spin text-emerald-400" />
+              Dispatching task…
+            </span>
+            <span className="font-mono">{Math.round(progress)}%</span>
+          </div>
+          <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-ink-700">
+            <div
+              className="h-full rounded-full bg-emerald-400/70 transition-[width] duration-150"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
         <div>
-          <label htmlFor="document_id" className="label">
+          <label htmlFor="document_id" className="tlabel mb-1.5 block">
             Document ID
           </label>
           <input
@@ -162,7 +194,7 @@ export default function DocumentUpload({ onSubmitted }) {
             type="text"
             className={cn(
               "input",
-              fieldErrors.document_id && "border-red-500/60 focus:border-red-500/70 focus:ring-red-500/20"
+              fieldErrors.document_id && "border-red-500/50 focus:border-red-500/60"
             )}
             placeholder="INV-4471"
             value={form.document_id}
@@ -170,14 +202,14 @@ export default function DocumentUpload({ onSubmitted }) {
             disabled={submitting}
           />
           {fieldErrors.document_id && (
-            <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-              <AlertCircle size={12} /> {fieldErrors.document_id}
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-400">
+              <AlertCircle size={11} /> {fieldErrors.document_id}
             </p>
           )}
         </div>
 
         <div>
-          <label htmlFor="content_type" className="label">
+          <label htmlFor="content_type" className="tlabel mb-1.5 block">
             Content Type
           </label>
           <input
@@ -199,7 +231,7 @@ export default function DocumentUpload({ onSubmitted }) {
         </div>
 
         <div className="md:col-span-2">
-          <label htmlFor="source_uri" className="label">
+          <label htmlFor="source_uri" className="tlabel mb-1.5 block">
             Source URI
           </label>
           <input
@@ -207,7 +239,7 @@ export default function DocumentUpload({ onSubmitted }) {
             type="text"
             className={cn(
               "input font-mono text-[13px]",
-              fieldErrors.source_uri && "border-red-500/60 focus:border-red-500/70 focus:ring-red-500/20"
+              fieldErrors.source_uri && "border-red-500/50 focus:border-red-500/60"
             )}
             placeholder="s3://bucket/invoice.png"
             value={form.source_uri}
@@ -215,8 +247,8 @@ export default function DocumentUpload({ onSubmitted }) {
             disabled={submitting}
           />
           {fieldErrors.source_uri && (
-            <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-              <AlertCircle size={12} /> {fieldErrors.source_uri}
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-400">
+              <AlertCircle size={11} /> {fieldErrors.source_uri}
             </p>
           )}
           <p className="mt-1.5 text-[11px] text-slate-600">
@@ -225,26 +257,27 @@ export default function DocumentUpload({ onSubmitted }) {
         </div>
 
         <div className="md:col-span-2">
-          <span className="label">Agents</span>
+          <span className="tlabel mb-1.5 block">Agents</span>
           <AgentSelector
             value={form.agents}
             onChange={(agents) => setField("agents", agents)}
           />
           {fieldErrors.agents && (
-            <p className="mt-1.5 flex items-center gap-1 text-xs text-red-400">
-              <AlertCircle size={12} /> {fieldErrors.agents}
+            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-red-400">
+              <AlertCircle size={11} /> {fieldErrors.agents}
             </p>
           )}
         </div>
 
         <div className="md:col-span-2">
-          <div className="flex items-start justify-between gap-4 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+          <div className="flex items-start justify-between gap-4 rounded border border-ink-700/70 bg-ink-950/50 p-3.5">
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-100">
-                Pipeline Processing
+              <p className="text-[13px] font-semibold text-slate-200">
+                Pipeline Mode
               </p>
-              <p className="mt-0.5 text-xs text-slate-500">
-                When enabled, OCR output is passed to downstream agents.
+              <p className="mt-0.5 text-[11px] text-slate-500">
+                When enabled, OCR output is passed to downstream agents before
+                aggregation (backend <span className="font-mono">pipeline: true</span>).
               </p>
             </div>
             <button
@@ -253,16 +286,14 @@ export default function DocumentUpload({ onSubmitted }) {
               aria-checked={form.pipeline}
               onClick={() => setField("pipeline", !form.pipeline)}
               className={cn(
-                "relative h-6 w-11 shrink-0 rounded-full border transition",
-                form.pipeline
-                  ? "border-cyan-400 bg-cyan-400/90"
-                  : "border-slate-600 bg-slate-800"
+                "relative h-5 w-9 shrink-0 rounded-full border transition",
+                form.pipeline ? "border-emerald-400/70 bg-emerald-400/80" : "border-slate-600 bg-ink-700"
               )}
             >
               <span
                 className={cn(
-                  "absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white shadow transition-all",
-                  form.pipeline ? "left-[calc(100%-1.25rem)]" : "left-0.5"
+                  "absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-ink-950 shadow transition-all",
+                  form.pipeline ? "left-[calc(100%-1rem)]" : "left-0.5"
                 )}
               />
             </button>
@@ -270,7 +301,7 @@ export default function DocumentUpload({ onSubmitted }) {
         </div>
       </div>
 
-      <div className="mt-7 flex items-center justify-end gap-3">
+      <div className="mt-6 flex items-center justify-end gap-2.5 border-t border-ink-700/60 pt-4">
         <button
           type="button"
           className="btn-secondary"
@@ -282,11 +313,11 @@ export default function DocumentUpload({ onSubmitted }) {
         <button type="submit" className="btn-primary" disabled={submitting}>
           {submitting ? (
             <>
-              <Loader2 size={16} className="animate-spin" /> Submitting…
+              <Loader2 size={15} className="animate-spin" /> Submitting…
             </>
           ) : (
             <>
-              <Send size={16} /> Start Analysis
+              <Send size={15} /> Start Processing
             </>
           )}
         </button>

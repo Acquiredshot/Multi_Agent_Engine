@@ -17,875 +17,1400 @@
   "graphTooltip": 1,
   "id": null,
   "links": [],
+  "liveNow": false,
   "panels": [
     {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
-      "id": 1,
-      "panels": [],
-      "title": "SYSTEM OVERVIEW",
-      "type": "row"
-    },
-    {
-      "id": 2,
-      "type": "stat",
-      "title": "API Availability",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 4, "x": 0, "y": 1 },
+      "description": "Workflow / document requests per minute: submitted (purple), processed (blue), failed (pink) — mae_documents_*.",
       "fieldConfig": {
         "defaults": {
-          "unit": "bool",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "green", "value": 1 }
-            ]
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "Requests / min",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 22,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
           },
-          "mappings": [
-            { "type": "value", "options": { "0": { "text": "Down", "color": "red" }, "1": { "text": "Up", "color": "green" } } }
-          ]
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Submitted" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#B877D9", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Processed" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#3274D9", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "Failed" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } },
+              { "id": "custom.fillOpacity", "value": 8 },
+              { "id": "custom.lineWidth", "value": 1.5 }
+            ]
+          }
+        ]
       },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "up{job=\"fastapi\"}",
-          "legendFormat": "API",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 3,
-      "type": "timeseries",
-      "title": "API Request Rate",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 5, "x": 4, "y": 1 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "reqps",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true, "lineInterpolation": "smooth" },
-          "color": { "mode": "palette-classic" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(rate(http_requests_total{job=\"fastapi\"}[5m]))",
-          "legendFormat": "requests/s",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
+      "gridPos": { "h": 11, "w": 11, "x": 0, "y": 0 },
       "id": 4,
-      "type": "timeseries",
-      "title": "API Error Rate",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 5, "x": 9, "y": 1 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true, "lineInterpolation": "smooth" },
-          "color": { "mode": "palette-classic" }
-        },
-        "overrides": []
-      },
       "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "legend": { "calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
+      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "refId": "A",
-          "expr": "100 * sum(rate(http_requests_total{job=\"fastapi\", status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"fastapi\"}[5m])), 0.0001)",
-          "legendFormat": "5xx %",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 5,
-      "type": "timeseries",
-      "title": "API Latency (p95)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 5, "x": 14, "y": 1 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true, "lineInterpolation": "smooth" },
-          "color": { "mode": "palette-classic" }
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(mae_documents_submitted_total[$__rate_interval])) * 60",
+          "legendFormat": "Submitted",
+          "refId": "A"
         },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
         {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"fastapi\"}[5m])) by (le))",
-          "legendFormat": "p95",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(mae_documents_processed_total[$__rate_interval])) * 60",
+          "legendFormat": "Processed",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(mae_documents_failed_total[$__rate_interval])) * 60",
+          "legendFormat": "Failed",
+          "refId": "C"
         }
-      ]
+      ],
+      "title": "WORKFLOW INGESTION RATE",
+      "type": "timeseries"
     },
     {
-      "id": 6,
-      "type": "stat",
-      "title": "Active Requests",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 5, "x": 19, "y": 1 },
+      "description": "Agent tasks currently executing across all worker processes (sum(mae_active_tasks)).",
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "max": 50,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 25 },
-              { "color": "red", "value": 100 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(http_requests_inprogress{job=\"fastapi\"})",
-          "legendFormat": "in-flight",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
-      "id": 7,
-      "panels": [],
-      "title": "AGENT OVERVIEW",
-      "type": "row"
-    },
-    {
-      "id": 8,
-      "type": "stat",
-      "title": "OCR Tasks",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 4, "x": 0, "y": 10 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": { "mode": "fixed", "fixedColor": "cyan" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(mae_agent_tasks_total{agent=\"ocr\"})",
-          "legendFormat": "OCR",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 9,
-      "type": "stat",
-      "title": "Compliance Tasks",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 4, "x": 4, "y": 10 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": { "mode": "fixed", "fixedColor": "violet" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(mae_agent_tasks_total{agent=\"compliance\"})",
-          "legendFormat": "Compliance",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 10,
-      "type": "stat",
-      "title": "Anomaly Tasks",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 4, "x": 8, "y": 10 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": { "mode": "fixed", "fixedColor": "fuchsia" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(mae_agent_tasks_total{agent=\"anomaly\"})",
-          "legendFormat": "Anomaly",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 11,
-      "type": "stat",
-      "title": "Failed Tasks",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 4, "x": 12, "y": 10 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": { "mode": "fixed", "fixedColor": "red" },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 5 },
-              { "color": "red", "value": 10 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(increase(mae_worker_tasks_failed_total[$__range]))",
-          "legendFormat": "failed",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 12,
-      "type": "timeseries",
-      "title": "Task Processing Duration (p95)",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 10 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true, "lineInterpolation": "smooth" },
-          "color": { "mode": "palette-classic" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(mae_worker_task_duration_seconds_bucket[5m])) by (le, agent))",
-          "legendFormat": "{{agent}}",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
-      "id": 13,
-      "panels": [],
-      "title": "QUEUE OVERVIEW",
-      "type": "row"
-    },
-    {
-      "id": 14,
-      "type": "timeseries",
-      "title": "RabbitMQ Queue Depth",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 19 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true },
-          "color": { "mode": "palette-classic" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rabbitmq_queue_messages{queue=~\"ocr|compliance|anomaly|default\"}",
-          "legendFormat": "{{queue}}",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 15,
-      "type": "timeseries",
-      "title": "Ready Messages",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 19 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true },
-          "color": { "mode": "palette-classic" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rabbitmq_queue_messages_ready{queue=~\"ocr|compliance|anomaly|default\"}",
-          "legendFormat": "{{queue}}",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 16,
-      "type": "timeseries",
-      "title": "Unacknowledged Messages",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 19 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true },
-          "color": { "mode": "palette-classic" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rabbitmq_queue_messages_unacknowledged{queue=~\"ocr|compliance|anomaly|default\"}",
-          "legendFormat": "{{queue}}",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 17,
-      "type": "timeseries",
-      "title": "Consumers",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 19 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true },
-          "color": { "mode": "palette-classic" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "rabbitmq_queue_consumers{queue=~\"ocr|compliance|anomaly|default\"}",
-          "legendFormat": "{{queue}}",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 },
-      "id": 18,
-      "panels": [],
-      "title": "REDIS",
-      "type": "row"
-    },
-    {
-      "id": 19,
-      "type": "stat",
-      "title": "Redis Availability",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 28 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bool",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "green", "value": 1 }
+              { "color": "#73BF69", "value": null },
+              { "color": "#F2CC0C", "value": 10 },
+              { "color": "#FF9830", "value": 20 },
+              { "color": "#F2495C", "value": 35 }
             ]
           },
-          "mappings": [
-            { "type": "value", "options": { "0": { "text": "Down", "color": "red" }, "1": { "text": "Up", "color": "green" } } }
-          ]
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "redis_up",
-          "legendFormat": "Redis",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 20,
-      "type": "stat",
-      "title": "Redis Memory Used",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 28 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 536870912 },
-              { "color": "red", "value": 1073741824 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "redis_memory_used_bytes",
-          "legendFormat": "used",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 21,
-      "type": "stat",
-      "title": "Connected Clients",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 28 },
-      "fieldConfig": {
-        "defaults": {
           "unit": "short"
         },
         "overrides": []
       },
+      "gridPos": { "h": 11, "w": 4, "x": 11, "y": 0 },
+      "id": 5,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
+        "minVizHeight": 75,
+        "minVizWidth": 75,
         "orientation": "auto",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "sizing": "auto"
       },
+      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "refId": "A",
-          "expr": "redis_connected_clients",
-          "legendFormat": "clients",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(mae_active_tasks)",
+          "legendFormat": "active",
+          "refId": "A"
         }
-      ]
+      ],
+      "title": "ACTIVE WORKFLOWS",
+      "type": "gauge"
     },
     {
-      "id": 22,
-      "type": "timeseries",
-      "title": "Command Rate",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 28 },
+      "description": "Agent task execution latency distribution over time, built from the real mae_worker_task_duration_seconds histogram buckets. Blue/green = fast executions, yellow = medium, orange/red = slow.",
       "fieldConfig": {
         "defaults": {
-          "unit": "ops",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true },
-          "color": { "mode": "palette-classic" }
+          "color": { "mode": "continuous-GrYlRd" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
         },
         "overrides": []
       },
+      "gridPos": { "h": 11, "w": 9, "x": 15, "y": 0 },
+      "id": 8,
       "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
+        "calculate": false,
+        "cellGap": 1,
+        "color": {
+          "exponent": 0.5,
+          "fill": "dark",
+          "mode": "scheme",
+          "reverse": true,
+          "scale": "exponential",
+          "scheme": "Spectral",
+          "steps": 64
+        },
+        "exemplars": { "color": "rgba(255,0,255,0.7)" },
+        "filterValues": { "le": 1e-9 },
+        "legend": { "show": true },
+        "rowsFrame": { "layout": "auto" },
+        "tooltip": { "mode": "single", "showColorScale": true, "yHistogram": false },
+        "yAxis": { "axisLabel": "Processing time (s)", "axisPlacement": "left", "reverse": false, "unit": "s" }
       },
+      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "refId": "A",
-          "expr": "sum(rate(redis_commands_total[5m]))",
-          "legendFormat": "commands/s",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (le) (rate(mae_worker_task_duration_seconds_bucket[$__interval]))",
+          "format": "heatmap",
+          "instant": false,
+          "legendFormat": "{{le}}",
+          "refId": "A"
         }
-      ]
+      ],
+      "title": "AGENT PERFORMANCE OVERVIEW",
+      "type": "heatmap"
     },
     {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 },
-      "id": 23,
-      "panels": [],
-      "title": "CONTAINERS",
-      "type": "row"
-    },
-    {
-      "id": 24,
-      "type": "timeseries",
-      "title": "CPU Usage",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 37 },
+      "description": "OCR agent: mean processing time (purple area) + error rate (pink, right axis). Legend also reports completed/failed task counts over the range.",
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true },
-          "color": { "mode": "palette-classic" }
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
         },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=\"\"}[5m])) by (container_label_com_docker_compose_service)",
-          "legendFormat": "{{container_label_com_docker_compose_service}}",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 25,
-      "type": "timeseries",
-      "title": "Memory Usage",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 37 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "bytes",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true },
-          "color": { "mode": "palette-classic" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(container_memory_usage_bytes{container_label_com_docker_compose_service!=\"\"}) by (container_label_com_docker_compose_service)",
-          "legendFormat": "{{container_label_com_docker_compose_service}}",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 26,
-      "type": "timeseries",
-      "title": "Network Traffic",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 37 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "Bps",
-          "custom": { "drawStyle": "line", "lineWidth": 2, "fillOpacity": 10, "showPoints": "never", "spanNulls": true },
-          "color": { "mode": "palette-classic" }
-        },
-        "overrides": []
-      },
-      "options": {
-        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(rate(container_network_receive_bytes_total{container_label_com_docker_compose_service!=\"\"}[5m])) by (container_label_com_docker_compose_service)",
-          "legendFormat": "rx {{container_label_com_docker_compose_service}}",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        },
-        {
-          "refId": "B",
-          "expr": "sum(rate(container_network_transmit_bytes_total{container_label_com_docker_compose_service!=\"\"}[5m])) by (container_label_com_docker_compose_service)",
-          "legendFormat": "tx {{container_label_com_docker_compose_service}}",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 27,
-      "type": "stat",
-      "title": "Running Containers",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 6, "w": 24, "x": 0, "y": 45 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "green", "value": 1 }
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "A" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#B877D9", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } },
+              { "id": "unit", "value": "percent" },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "custom.axisLabel", "value": "error rate" },
+              { "id": "custom.fillOpacity", "value": 0 },
+              { "id": "custom.lineWidth", "value": 1 },
+              { "id": "max", "value": 100 }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "C" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "custom.hideFrom", "value": { "legend": false, "tooltip": true, "viz": true } }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "D" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "custom.hideFrom", "value": { "legend": false, "tooltip": true, "viz": true } }
             ]
           }
-        },
-        "overrides": []
+        ]
       },
+      "gridPos": { "h": 9, "w": 6, "x": 0, "y": 11 },
+      "id": 40,
+      "options": {
+        "legend": { "calcs": ["mean", "lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(mae_worker_task_duration_seconds_sum{agent=\"ocr\"}[$__rate_interval])) / clamp_min(sum(rate(mae_worker_task_duration_seconds_count{agent=\"ocr\"}[$__rate_interval])), 0.0001)",
+          "legendFormat": "mean time",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * sum(rate(mae_worker_tasks_failed_total{agent=\"ocr\"}[$__rate_interval])) / clamp_min(sum(rate(mae_worker_tasks_started_total{agent=\"ocr\"}[$__rate_interval])), 0.0001)",
+          "legendFormat": "error rate",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(mae_worker_tasks_completed_total{agent=\"ocr\"}[$__range]))",
+          "legendFormat": "completed",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(mae_worker_tasks_failed_total{agent=\"ocr\"}[$__range]))",
+          "legendFormat": "failed",
+          "refId": "D"
+        }
+      ],
+      "title": "OCR AGENT",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Compliance agent: mean processing time (blue area) + error rate (pink, right axis). Legend also reports completed/failed task counts over the range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "A" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#3274D9", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } },
+              { "id": "unit", "value": "percent" },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "custom.axisLabel", "value": "error rate" },
+              { "id": "custom.fillOpacity", "value": 0 },
+              { "id": "custom.lineWidth", "value": 1 },
+              { "id": "max", "value": 100 }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "C" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "custom.hideFrom", "value": { "legend": false, "tooltip": true, "viz": true } }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "D" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "custom.hideFrom", "value": { "legend": false, "tooltip": true, "viz": true } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 6, "x": 6, "y": 11 },
+      "id": 41,
+      "options": {
+        "legend": { "calcs": ["mean", "lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(mae_worker_task_duration_seconds_sum{agent=\"compliance\"}[$__rate_interval])) / clamp_min(sum(rate(mae_worker_task_duration_seconds_count{agent=\"compliance\"}[$__rate_interval])), 0.0001)",
+          "legendFormat": "mean time",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * sum(rate(mae_worker_tasks_failed_total{agent=\"compliance\"}[$__rate_interval])) / clamp_min(sum(rate(mae_worker_tasks_started_total{agent=\"compliance\"}[$__rate_interval])), 0.0001)",
+          "legendFormat": "error rate",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(mae_worker_tasks_completed_total{agent=\"compliance\"}[$__range]))",
+          "legendFormat": "completed",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(mae_worker_tasks_failed_total{agent=\"compliance\"}[$__range]))",
+          "legendFormat": "failed",
+          "refId": "D"
+        }
+      ],
+      "title": "COMPLIANCE AGENT",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Anomaly Detection agent: mean processing time (cyan area) + error rate (pink, right axis). Legend also reports completed/failed task counts over the range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "A" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#00BCD4", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } },
+              { "id": "unit", "value": "percent" },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "custom.axisLabel", "value": "error rate" },
+              { "id": "custom.fillOpacity", "value": 0 },
+              { "id": "custom.lineWidth", "value": 1 },
+              { "id": "max", "value": 100 }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "C" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "custom.hideFrom", "value": { "legend": false, "tooltip": true, "viz": true } }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "D" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "custom.hideFrom", "value": { "legend": false, "tooltip": true, "viz": true } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 6, "x": 12, "y": 11 },
+      "id": 42,
+      "options": {
+        "legend": { "calcs": ["mean", "lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(mae_worker_task_duration_seconds_sum{agent=\"anomaly\"}[$__rate_interval])) / clamp_min(sum(rate(mae_worker_task_duration_seconds_count{agent=\"anomaly\"}[$__rate_interval])), 0.0001)",
+          "legendFormat": "mean time",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * sum(rate(mae_worker_tasks_failed_total{agent=\"anomaly\"}[$__rate_interval])) / clamp_min(sum(rate(mae_worker_tasks_started_total{agent=\"anomaly\"}[$__rate_interval])), 0.0001)",
+          "legendFormat": "error rate",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(mae_worker_tasks_completed_total{agent=\"anomaly\"}[$__range]))",
+          "legendFormat": "completed",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(mae_worker_tasks_failed_total{agent=\"anomaly\"}[$__range]))",
+          "legendFormat": "failed",
+          "refId": "D"
+        }
+      ],
+      "title": "ANOMALY DETECTION AGENT",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Reporting / aggregation agent (agent=\"aggregate\"): mean processing time (green area) + error rate (pink, right axis). Legend also reports completed/failed task counts over the range.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "A" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } },
+              { "id": "unit", "value": "percent" },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "custom.axisLabel", "value": "error rate" },
+              { "id": "custom.fillOpacity", "value": 0 },
+              { "id": "custom.lineWidth", "value": 1 },
+              { "id": "max", "value": 100 }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "C" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "custom.hideFrom", "value": { "legend": false, "tooltip": true, "viz": true } }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "D" },
+            "properties": [
+              { "id": "unit", "value": "short" },
+              { "id": "custom.hideFrom", "value": { "legend": false, "tooltip": true, "viz": true } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 9, "w": 6, "x": 18, "y": 11 },
+      "id": 43,
+      "options": {
+        "legend": { "calcs": ["mean", "lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(mae_worker_task_duration_seconds_sum{agent=\"aggregate\"}[$__rate_interval])) / clamp_min(sum(rate(mae_worker_task_duration_seconds_count{agent=\"aggregate\"}[$__rate_interval])), 0.0001)",
+          "legendFormat": "mean time",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * sum(rate(mae_worker_tasks_failed_total{agent=\"aggregate\"}[$__rate_interval])) / clamp_min(sum(rate(mae_worker_tasks_started_total{agent=\"aggregate\"}[$__rate_interval])), 0.0001)",
+          "legendFormat": "error rate",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(mae_worker_tasks_completed_total{agent=\"aggregate\"}[$__range]))",
+          "legendFormat": "completed",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(increase(mae_worker_tasks_failed_total{agent=\"aggregate\"}[$__range]))",
+          "legendFormat": "failed",
+          "refId": "D"
+        }
+      ],
+      "title": "REPORTING AGENT",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Fleet-wide agent performance: mean processing time, error rate and task success rate.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#73BF69", "value": null }] },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#73BF69", "value": null },
+                    { "color": "#F2CC0C", "value": 2 },
+                    { "color": "#FF9830", "value": 5 },
+                    { "color": "#F2495C", "value": 15 }
+                  ]
+                }
+              },
+              { "id": "unit", "value": "percent" }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "C" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#F2495C", "value": null },
+                    { "color": "#FF9830", "value": 90 },
+                    { "color": "#73BF69", "value": 95 }
+                  ]
+                }
+              },
+              { "id": "unit", "value": "percent" }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 20 },
+      "id": 16,
       "options": {
         "colorMode": "value",
         "graphMode": "none",
         "justifyMode": "auto",
-        "orientation": "auto",
+        "orientation": "horizontal",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
+        "textMode": "value_and_name",
+        "wideLayout": false
       },
+      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "refId": "A",
-          "expr": "count(container_last_seen{container_label_com_docker_compose_service!=\"\"})",
-          "legendFormat": "containers",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(mae_worker_task_duration_seconds_sum[5m])) / clamp_min(sum(rate(mae_worker_task_duration_seconds_count[5m])), 0.0001)",
+          "legendFormat": "MEAN PROCESSING TIME",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * sum(rate(mae_worker_tasks_failed_total[5m])) / clamp_min(sum(rate(mae_worker_tasks_started_total[5m])), 0.0001)",
+          "legendFormat": "ERROR RATE",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "100 * sum(rate(mae_worker_tasks_completed_total[5m])) / clamp_min(sum(rate(mae_worker_tasks_started_total[5m])), 0.0001)",
+          "legendFormat": "TASK SUCCESS RATE",
+          "refId": "C"
         }
-      ]
+      ],
+      "title": "AGENT PERFORMANCE SUMMARY",
+      "type": "stat"
     },
     {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 51 },
-      "id": 28,
-      "panels": [],
-      "title": "APPLICATION",
-      "type": "row"
-    },
-    {
-      "id": 29,
-      "type": "stat",
-      "title": "Documents Submitted",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 52 },
+      "description": "System state store. This stack uses Redis as the state store (Postgres is not deployed here, so no Postgres metrics exist to show — none are faked).",
       "fieldConfig": {
         "defaults": {
-          "unit": "short",
-          "color": { "mode": "fixed", "fixedColor": "cyan" }
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "#F2495C", "index": 1, "text": "DOWN" },
+                "1": { "color": "#73BF69", "index": 0, "text": "UP" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#73BF69", "value": null }] },
+          "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "C" },
+            "properties": [{ "id": "unit", "value": "bytes" }]
+          }
+        ]
       },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 25 },
+      "id": 50,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "up{job=\"redis\"}",
+          "legendFormat": "REDIS",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "up{job=\"rabbitmq\"}",
+          "legendFormat": "RABBITMQ",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "redis_memory_used_bytes{job=\"redis\"}",
+          "legendFormat": "REDIS MEMORY",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rabbitmq_connections{job=\"rabbitmq\"}",
+          "legendFormat": "BROKER CONNECTIONS",
+          "refId": "D"
+        }
+      ],
+      "title": "SYSTEM STATE STORE",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Celery queue backlog (stacked depth per agent queue, left axis), unacknowledged messages, task execution rate and p95 task latency (right axis).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "Queue depth (messages)",
+            "axisPlacement": "left",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 35,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "stepAfter",
+            "lineWidth": 1.5,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "group": "depth", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "ocr backlog" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#3274D9", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "compliance backlog" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#B877D9", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "anomaly backlog" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#00BCD4", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "default backlog" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#73BF69", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "unacknowledged" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#F2495C", "mode": "fixed" } },
+              { "id": "custom.fillOpacity", "value": 0 },
+              { "id": "custom.lineWidth", "value": 1 },
+              { "id": "custom.stacking", "value": { "group": "A", "mode": "none" } },
+              { "id": "custom.axisPlacement", "value": "right" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "task execution rate" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#F2CC0C", "mode": "fixed" } },
+              { "id": "custom.fillOpacity", "value": 0 },
+              { "id": "custom.lineInterpolation", "value": "smooth" },
+              { "id": "custom.lineWidth", "value": 2 },
+              { "id": "custom.stacking", "value": { "group": "A", "mode": "none" } },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "custom.axisLabel", "value": "rate · latency" },
+              { "id": "unit", "value": "ops" }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "task latency p95" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#FF9830", "mode": "fixed" } },
+              { "id": "custom.fillOpacity", "value": 0 },
+              { "id": "custom.lineInterpolation", "value": "smooth" },
+              { "id": "custom.lineWidth", "value": 2 },
+              { "id": "custom.stacking", "value": { "group": "A", "mode": "none" } },
+              { "id": "custom.axisPlacement", "value": "right" },
+              { "id": "custom.axisLabel", "value": "rate · latency" },
+              { "id": "unit", "value": "s" }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 20 },
+      "id": 15,
+      "options": {
+        "legend": { "calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum by (queue) (rabbitmq_queue_messages{queue=~\"ocr|compliance|anomaly|default\"})",
+          "legendFormat": "{{queue}} backlog",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rabbitmq_queue_messages_unacknowledged{queue=~\"ocr|compliance|anomaly|default\"})",
+          "legendFormat": "unacknowledged",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(mae_worker_tasks_completed_total[$__rate_interval]))",
+          "legendFormat": "task execution rate",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(mae_worker_task_duration_seconds_bucket[$__rate_interval])))",
+          "legendFormat": "task latency p95",
+          "refId": "D"
+        }
+      ],
+      "title": "CELERY QUEUE BACKLOG & LATENCY",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "API request rate and p95 latency (http_requests_total / http_request_duration_seconds).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "decimals": 3,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "#73BF69", "value": null },
+              { "color": "#FF9830", "value": 0.5 },
+              { "color": "#F2495C", "value": 2 }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [
+              { "id": "unit", "value": "reqps" },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [{ "color": "#3274D9", "value": null }]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 30 },
+      "id": 51,
       "options": {
         "colorMode": "value",
         "graphMode": "area",
         "justifyMode": "auto",
-        "orientation": "auto",
+        "orientation": "horizontal",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
+        "textMode": "value_and_name",
+        "wideLayout": false
       },
+      "pluginVersion": "11.0.0",
       "targets": [
         {
-          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{job=\"fastapi\"}[5m])))",
+          "legendFormat": "API LATENCY p95",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(http_requests_total{job=\"fastapi\"}[5m]))",
+          "legendFormat": "API REQUEST RATE",
+          "refId": "B"
+        }
+      ],
+      "title": "API HEALTH",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "RabbitMQ: availability, connections and total consumers on the agent queues.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "#F2495C", "index": 1, "text": "DOWN" },
+                "1": { "color": "#73BF69", "index": 0, "text": "UP" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#73BF69", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [
+              { "id": "mappings", "value": [] },
+              { "id": "color", "value": { "fixedColor": "#B877D9", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "C" },
+            "properties": [
+              { "id": "mappings", "value": [] },
+              { "id": "color", "value": { "fixedColor": "#00BCD4", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 30 },
+      "id": 54,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "up{job=\"rabbitmq\"}",
+          "legendFormat": "RABBITMQ",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rabbitmq_connections{job=\"rabbitmq\"}",
+          "legendFormat": "CONNECTIONS",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rabbitmq_queue_consumers{queue=~\"ocr|compliance|anomaly|default\"})",
+          "legendFormat": "QUEUE CONSUMERS",
+          "refId": "C"
+        }
+      ],
+      "title": "RABBITMQ",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Redis: availability, connected clients, memory and command rate (redis_exporter).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "#F2495C", "index": 1, "text": "DOWN" },
+                "1": { "color": "#73BF69", "index": 0, "text": "UP" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#73BF69", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [
+              { "id": "mappings", "value": [] },
+              { "id": "color", "value": { "fixedColor": "#3274D9", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "C" },
+            "properties": [
+              { "id": "mappings", "value": [] },
+              { "id": "unit", "value": "bytes" },
+              { "id": "color", "value": { "fixedColor": "#B877D9", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "D" },
+            "properties": [
+              { "id": "mappings", "value": [] },
+              { "id": "unit", "value": "ops" },
+              { "id": "color", "value": { "fixedColor": "#F2CC0C", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 30 },
+      "id": 55,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "up{job=\"redis\"}",
+          "legendFormat": "REDIS",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "redis_connected_clients{job=\"redis\"}",
+          "legendFormat": "CONNECTED CLIENTS",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "redis_memory_used_bytes{job=\"redis\"}",
+          "legendFormat": "MEMORY USED",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "sum(rate(redis_commands_total[5m]))",
+          "legendFormat": "COMMANDS / SEC",
+          "refId": "D"
+        }
+      ],
+      "title": "REDIS",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Worker health. Workers are healthy when consumers are attached to their Celery queues (rabbitmq_queue_consumers).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [
+            {
+              "options": {
+                "0": { "color": "#F2495C", "index": 1, "text": "DOWN" },
+                "1": { "color": "#73BF69", "index": 0, "text": "UP" }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#73BF69", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 30 },
+      "id": 23,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "clamp_max(sum(rabbitmq_queue_consumers{queue=\"ocr\"}), 1)",
+          "legendFormat": "OCR WORKER",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "clamp_max(sum(rabbitmq_queue_consumers{queue=\"compliance\"}), 1)",
+          "legendFormat": "COMPLIANCE WORKER",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "clamp_max(sum(rabbitmq_queue_consumers{queue=\"anomaly\"}), 1)",
+          "legendFormat": "ANOMALY WORKER",
+          "refId": "C"
+        }
+      ],
+      "title": "WORKER HEALTH",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Redis memory usage (state store footprint).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1.5,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "#B877D9", "value": null }] },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 35 },
+      "id": 27,
+      "options": {
+        "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "redis_memory_used_bytes{job=\"redis\"}",
+          "legendFormat": "used",
+          "refId": "A"
+        }
+      ],
+      "title": "REDIS MEMORY",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Redis connected clients and RabbitMQ connections.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1.5,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "redis clients" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#3274D9", "mode": "fixed" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "rabbitmq connections" },
+            "properties": [{ "id": "color", "value": { "fixedColor": "#00BCD4", "mode": "fixed" } }]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 35 },
+      "id": 52,
+      "options": {
+        "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "redis_connected_clients{job=\"redis\"}",
+          "legendFormat": "redis clients",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rabbitmq_connections{job=\"rabbitmq\"}",
+          "legendFormat": "rabbitmq connections",
+          "refId": "B"
+        }
+      ],
+      "title": "CONNECTIONS",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Container CPU usage per Multi-Agent Engine container (cAdvisor).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisGridShow": true,
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1.5,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 35 },
+      "id": 25,
+      "options": {
+        "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "rate(container_cpu_usage_seconds_total{name=~\"mae_.*\"}[$__rate_interval])",
+          "legendFormat": "{{name}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CONTAINER CPU",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "description": "Application totals over the selected range (mae_documents_*).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "#B877D9", "value": null }]
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byFrameRefID", "options": "B" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [{ "color": "#3274D9", "value": null }]
+                }
+              }
+            ]
+          },
+          {
+            "matcher": { "id": "byFrameRefID", "options": "C" },
+            "properties": [
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    { "color": "#73BF69", "value": null },
+                    { "color": "#F2495C", "value": 0.0001 }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 35 },
+      "id": 53,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name",
+        "wideLayout": false
+      },
+      "pluginVersion": "11.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "sum(increase(mae_documents_submitted_total[$__range]))",
-          "legendFormat": "submitted",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 30,
-      "type": "stat",
-      "title": "Documents Processed",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 52 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": { "mode": "fixed", "fixedColor": "green" }
+          "legendFormat": "SUBMITTED",
+          "refId": "A"
         },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
         {
-          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "sum(increase(mae_documents_processed_total[$__range]))",
-          "legendFormat": "processed",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
-    },
-    {
-      "id": 31,
-      "type": "stat",
-      "title": "Documents Failed",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 52 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "color": { "mode": "fixed", "fixedColor": "red" },
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 3 },
-              { "color": "red", "value": 8 }
-            ]
-          }
+          "legendFormat": "PROCESSED",
+          "refId": "B"
         },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
         {
-          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
           "expr": "sum(increase(mae_documents_failed_total[$__range]))",
-          "legendFormat": "failed",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
+          "legendFormat": "FAILED",
+          "refId": "C"
         }
-      ]
-    },
-    {
-      "id": 32,
-      "type": "stat",
-      "title": "Active Tasks",
-      "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 52 },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 4 },
-              { "color": "red", "value": 8 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "textMode": "auto"
-      },
-      "targets": [
-        {
-          "refId": "A",
-          "expr": "sum(mae_active_tasks)",
-          "legendFormat": "active",
-          "datasource": { "type": "prometheus", "uid": "prometheus" }
-        }
-      ]
+      ],
+      "title": "WORKFLOW TOTALS",
+      "type": "stat"
     }
   ],
-  "refresh": "5s",
-  "schemaVersion": 40,
-  "tags": ["multi-agent-engine", "prometheus"],
+  "preload": false,
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": ["multi-agent-engine", "workflow", "celery", "prometheus"],
   "templating": { "list": [] },
-  "time": { "from": "now-1h", "to": "now" },
+  "time": { "from": "now-30m", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Multi-Agent Engine",
+  "title": "INTELLIGENT MULTI-AGENT WORKFLOW ENGINE",
   "uid": "multi-agent-engine",
-  "version": 1,
+  "version": 6,
   "weekStart": ""
 }

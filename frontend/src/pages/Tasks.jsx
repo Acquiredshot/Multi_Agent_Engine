@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { useSearchParams } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import {
   ArrowRight,
   ClipboardList,
@@ -44,7 +44,7 @@ function AgentChips({ agentKeys }) {
       {agentLabels(agentKeys).map((label) => (
         <span
           key={label}
-          className="rounded-md border border-slate-700/70 bg-slate-800/60 px-1.5 py-0.5 text-[11px] font-medium text-slate-300"
+          className="rounded-sm border border-ink-700 bg-ink-850 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-400"
         >
           {label}
         </span>
@@ -58,18 +58,15 @@ export default function Tasks() {
   const [tasks, setTasks] = useState(mergeTasks)
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState("all")
-  // Deep-link support: /tasks?task=<id> opens that task on mount.
+  // Deep-link support: /tasks?task=<id> preselects that task.
   const [selectedId, setSelectedId] = useState(() => searchParams.get("task"))
 
   const refresh = () => setTasks(mergeTasks())
 
   const handleUpdate = (updated) => {
-    setTasks((prev) => {
-      const next = prev.map((t) =>
-        t.task_id === updated.task_id ? { ...t, ...updated } : t
-      )
-      return next
-    })
+    setTasks((prev) =>
+      prev.map((t) => (t.task_id === updated.task_id ? { ...t, ...updated } : t))
+    )
     if (updated.task_id) updateTask(updated.task_id, updated)
   }
 
@@ -88,46 +85,46 @@ export default function Tasks() {
   const selected = tasks.find((t) => t.task_id === selectedId) || null
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-3.5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">Task Monitor</h2>
-          <p className="mt-1 text-sm text-slate-400">
-            Live task states are polled from the backend every 2 seconds.
+          <h2 className="text-lg font-bold tracking-tight text-slate-100">Task Monitor</h2>
+          <p className="text-[11px] text-slate-500">
+            Live task states are polled from the backend every 2 seconds
           </p>
         </div>
-        <button type="button" className="btn-secondary shrink-0" onClick={refresh}>
-          <RefreshCw size={15} /> Refresh
+        <button type="button" className="btn-secondary shrink-0 !py-1.5 !text-xs" onClick={refresh}>
+          <RefreshCw size={13} /> Refresh
         </button>
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs">
           <Search
-            size={15}
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+            size={14}
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600"
           />
           <input
             type="text"
-            className="input pl-9"
+            className="input pl-8"
             placeholder="Search task ID or document…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 overflow-x-auto">
-          <SlidersHorizontal size={15} className="shrink-0 text-slate-500" />
+        <div className="flex items-center gap-1.5 overflow-x-auto">
+          <SlidersHorizontal size={14} className="shrink-0 text-slate-600" />
           {FILTERS.map((f) => (
             <button
               key={f.key}
               type="button"
               onClick={() => setFilter(f.key)}
               className={cn(
-                "shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium transition",
+                "shrink-0 rounded-sm border px-2.5 py-1 text-[11px] font-medium transition",
                 filter === f.key
-                  ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-300"
-                  : "border-slate-700/70 bg-slate-900/50 text-slate-400 hover:border-slate-600 hover:text-slate-200"
+                  ? "border-emerald-500/40 bg-emerald-500/[0.07] text-emerald-300"
+                  : "border-ink-700 bg-ink-850 text-slate-500 hover:border-slate-600 hover:text-slate-300"
               )}
             >
               {f.label}
@@ -136,7 +133,7 @@ export default function Tasks() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid grid-cols-1 items-start gap-3.5 xl:grid-cols-[minmax(0,1fr)_360px]">
         {/* Tasks list */}
         <div>
           {filtered.length === 0 ? (
@@ -150,52 +147,52 @@ export default function Tasks() {
               }
             />
           ) : (
-            <div className="card overflow-hidden">
+            <div className="panel overflow-hidden">
               {/* Desktop table */}
               <div className="hidden overflow-x-auto md:block">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-slate-800/80 text-[11px] uppercase tracking-wider text-slate-500">
-                      <th className="px-5 py-3 font-semibold">Task ID</th>
-                      <th className="px-5 py-3 font-semibold">Document</th>
-                      <th className="px-5 py-3 font-semibold">Status</th>
-                      <th className="px-5 py-3 font-semibold">Agents</th>
-                      <th className="px-5 py-3 font-semibold">Started</th>
-                      <th className="px-5 py-3 font-semibold">Duration</th>
-                      <th className="px-5 py-3 text-right font-semibold">Action</th>
+                    <tr className="border-b border-ink-700/60 text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                      <th className="px-4 py-2.5 font-semibold">Task ID</th>
+                      <th className="px-4 py-2.5 font-semibold">Document</th>
+                      <th className="px-4 py-2.5 font-semibold">Status</th>
+                      <th className="px-4 py-2.5 font-semibold">Agents</th>
+                      <th className="px-4 py-2.5 font-semibold">Started</th>
+                      <th className="px-4 py-2.5 font-semibold">Duration</th>
+                      <th className="px-4 py-2.5 text-right font-semibold">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60">
+                  <tbody className="divide-y divide-ink-700/40">
                     {filtered.map((task) => (
                       <tr
                         key={task.task_id}
                         className={cn(
-                          "cursor-pointer transition-colors hover:bg-slate-800/30",
-                          selectedId === task.task_id && "bg-cyan-500/5"
+                          "cursor-pointer transition-colors hover:bg-ink-750/70",
+                          selectedId === task.task_id && "bg-emerald-500/[0.04]"
                         )}
                         onClick={() => setSelectedId(task.task_id)}
                       >
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-2.5">
                           <TaskId id={task.task_id} />
                         </td>
-                        <td className="px-5 py-3.5 font-medium text-slate-200">
+                        <td className="px-4 py-2.5 font-medium text-slate-200">
                           {task.document_id || "—"}
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-2.5">
                           <StatusBadge status={task.status} />
                         </td>
-                        <td className="px-5 py-3.5">
+                        <td className="px-4 py-2.5">
                           <AgentChips agentKeys={task.agentKeys || []} />
                         </td>
-                        <td className="px-5 py-3.5 text-xs text-slate-400">
+                        <td className="px-4 py-2.5 text-xs text-slate-500">
                           {task.submitted_at ? "just now" : task.created}
                         </td>
-                        <td className="px-5 py-3.5 text-xs text-slate-400">
+                        <td className="px-4 py-2.5 font-mono text-xs text-slate-500">
                           {task.duration || "—"}
                         </td>
-                        <td className="px-5 py-3.5 text-right">
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-400">
-                            View <ArrowRight size={12} />
+                        <td className="px-4 py-2.5 text-right">
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                            View <ArrowRight size={11} />
                           </span>
                         </td>
                       </tr>
@@ -205,11 +202,11 @@ export default function Tasks() {
               </div>
 
               {/* Mobile cards */}
-              <div className="divide-y divide-slate-800/60 md:hidden">
+              <div className="divide-y divide-ink-700/40 md:hidden">
                 {filtered.map((task) => (
                   <div
                     key={task.task_id}
-                    className="space-y-3 p-4"
+                    className="space-y-2.5 p-3.5"
                     onClick={() => setSelectedId(task.task_id)}
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -220,14 +217,14 @@ export default function Tasks() {
                       <span className="font-medium text-slate-200">
                         {task.document_id || "—"}
                       </span>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-[11px] text-slate-500">
                         {task.submitted_at ? "just now" : task.created}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
                       <AgentChips agentKeys={task.agentKeys || []} />
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-400">
-                        View <ArrowRight size={12} />
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                        View <ArrowRight size={11} />
                       </span>
                     </div>
                   </div>
@@ -235,10 +232,23 @@ export default function Tasks() {
               </div>
             </div>
           )}
+
+          {/* Full page link */}
+          <div className="mt-2.5 text-right">
+            <Link
+              to={selectedId ? `/tasks/${encodeURIComponent(selectedId)}` : "/tasks"}
+              className="text-[11px] font-medium text-slate-500 transition hover:text-emerald-300"
+              onClick={(e) => {
+                if (!selectedId) e.preventDefault()
+              }}
+            >
+              Open selected task full page →
+            </Link>
+          </div>
         </div>
 
         {/* Detail panel */}
-        <div className="xl:sticky xl:top-24">
+        <div className="xl:sticky xl:top-16">
           {selected ? (
             <TaskDetailPanel
               task={selected}
@@ -246,7 +256,7 @@ export default function Tasks() {
               onClose={() => setSelectedId(null)}
             />
           ) : (
-            <div className="card p-6">
+            <div className="panel">
               <EmptyState
                 icon={ClipboardList}
                 title="Select a task"

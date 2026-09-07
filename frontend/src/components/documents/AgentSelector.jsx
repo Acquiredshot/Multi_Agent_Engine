@@ -21,7 +21,7 @@ export default function AgentSelector({ value = [], onChange }) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
       {AGENTS.map((agent) => {
         const selected = value.includes(agent.key)
         const visual = AGENT_ICONS[agent.key] || AGENT_ICONS.ocr
@@ -33,35 +33,35 @@ export default function AgentSelector({ value = [], onChange }) {
             onClick={() => toggle(agent.key)}
             aria-pressed={selected}
             className={cn(
-              "relative flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition",
+              "relative flex flex-col items-start gap-2 rounded border p-3 text-left transition",
               selected
-                ? "border-cyan-500/50 bg-cyan-500/5"
-                : "border-slate-700/70 bg-slate-950/40 hover:border-slate-600"
+                ? "border-emerald-500/40 bg-emerald-500/[0.05]"
+                : "border-ink-700 bg-ink-950/60 hover:border-slate-600"
             )}
           >
             <span
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-lg border",
+                "flex h-7 w-7 items-center justify-center rounded-sm border",
                 selected
-                  ? "border-cyan-500/30 bg-cyan-500/10"
-                  : "border-slate-700 bg-slate-800/60 text-slate-400"
+                  ? "border-emerald-500/30 bg-emerald-500/10"
+                  : "border-ink-700 bg-ink-800 text-slate-500"
               )}
             >
-              <Icon size={16} className={selected ? visual.active : undefined} />
+              <Icon size={14} className={selected ? visual.active : undefined} />
             </span>
-            <span className="text-sm font-semibold text-slate-100">{agent.name}</span>
+            <span className="text-[13px] font-semibold text-slate-200">{agent.name}</span>
             <span className="text-[11px] leading-snug text-slate-500">
               {agent.description}
             </span>
             <span
               className={cn(
-                "absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-md border transition",
+                "absolute right-2.5 top-2.5 flex h-4 w-4 items-center justify-center rounded-sm border transition",
                 selected
-                  ? "border-cyan-400 bg-cyan-400 text-slate-950"
-                  : "border-slate-600 bg-slate-800/60 text-transparent"
+                  ? "border-emerald-400 bg-emerald-400 text-ink-950"
+                  : "border-slate-600 bg-ink-800 text-transparent"
               )}
             >
-              <Check size={13} strokeWidth={3} />
+              <Check size={11} strokeWidth={3} />
             </span>
           </button>
         )

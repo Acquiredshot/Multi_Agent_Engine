@@ -5,37 +5,37 @@ import { getStatusCategory } from "../../utils/status"
 const CATEGORIES = {
   success: {
     label: "Completed",
-    classes: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+    classes: "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-300",
     dot: "bg-emerald-400",
   },
   processing: {
     label: "Processing",
-    classes: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+    classes: "border-amber-500/30 bg-amber-500/[0.07] text-amber-300",
     dot: "bg-amber-400 animate-pulse-dot",
   },
   pending: {
     label: "Pending",
-    classes: "border-slate-600/60 bg-slate-500/10 text-slate-300",
+    classes: "border-slate-600/50 bg-slate-500/[0.08] text-slate-300",
     dot: "bg-slate-400",
   },
   failed: {
     label: "Failed",
-    classes: "border-red-500/30 bg-red-500/10 text-red-300",
+    classes: "border-red-500/30 bg-red-500/[0.07] text-red-300",
     dot: "bg-red-400",
   },
   healthy: {
     label: "Operational",
-    classes: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+    classes: "border-emerald-500/30 bg-emerald-500/[0.07] text-emerald-300",
     dot: "bg-emerald-400",
   },
   degraded: {
     label: "Degraded",
-    classes: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+    classes: "border-amber-500/30 bg-amber-500/[0.07] text-amber-300",
     dot: "bg-amber-400",
   },
   offline: {
     label: "Offline",
-    classes: "border-red-500/30 bg-red-500/10 text-red-300",
+    classes: "border-red-500/30 bg-red-500/[0.07] text-red-300",
     dot: "bg-red-400",
   },
 }
@@ -50,7 +50,7 @@ export default function StatusBadge({ status, label, className }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-[11px] font-medium",
         style.classes,
         className
       )}

@@ -1,92 +1,79 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Outlet, useLocation } from "react-router-dom"
 import Sidebar from "./Sidebar"
 import Topbar from "./Topbar"
 import { checkHealth } from "../../services/api"
-import { cn } from "../../utils/cn"
-
-const PAGE_META = {
-  "/": {
-    title: "Dashboard",
-    subtitle: "Monitor your document intelligence workflow",
-  },
-  "/documents": {
-    title: "Documents",
-    subtitle: "Submit documents to the analysis pipeline",
-  },
-  "/tasks": {
-    title: "Tasks",
-    subtitle: "Monitor and inspect analysis tasks",
-  },
-  "/health": {
-    title: "System Health",
-    subtitle: "Service and infrastructure status",
-  },
-}
 
 /**
  * App shell: sidebar + topbar + routed content.
- * Also owns the API health check shown in the topbar.
+ * Owns the /health heartbeat shown in the topbar and a global
+ * refresh signal (incremented counter) that pages can subscribe to.
  */
 export default function DashboardLayout() {
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [collapsed, setCollapsed] = useState(false)
   const [apiStatus, setApiStatus] = useState("checking")
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [refreshSignal, setRefreshSignal] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const heartbeat = useCallback(async () => {
+    try {
+      const health = await checkHealth()
+      setApiStatus(health?.status === "ok" ? "connected" : "offline")
+    } catch {
+      setApiStatus("offline")
+    }
+    setLastUpdated(new Date())
+  }, [])
 
   useEffect(() => {
     let cancelled = false
-
-    const check = async () => {
-      try {
-        const health = await checkHealth()
-        if (cancelled) return
-        setApiStatus(health.status === "ok" ? "connected" : "offline")
-      } catch {
-        if (cancelled) return
-        setApiStatus("offline")
-      }
+    const run = async () => {
+      await heartbeat()
+      if (cancelled) return
     }
-
-    check()
-    const timer = setInterval(check, 30000)
+    run()
+    const timer = setInterval(() => {
+      if (!cancelled) heartbeat()
+    }, 30000)
     return () => {
       cancelled = true
       clearInterval(timer)
     }
-  }, [])
+  }, [heartbeat])
 
-  const meta = PAGE_META[location.pathname] || {
-    title: "Multi-Agent Engine",
-    subtitle: "Document Intelligence",
+  // Manual refresh: spin + re-run heartbeat + bump the signal.
+  const handleRefresh = () => {
+    setRefreshing(true)
+    setRefreshSignal((s) => s + 1)
+    heartbeat().finally(() => setRefreshing(false))
   }
 
-  return (
-    <div className="min-h-screen bg-slate-950">
-      <Sidebar
-        open={mobileOpen}
-        onClose={() => setMobileOpen(false)}
-        collapsed={collapsed}
-        onToggleCollapse={() => setCollapsed((c) => !c)}
-      />
+  // Scroll to top on navigation.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
 
-      <div
-        className={cn(
-          "flex min-h-screen flex-col transition-all duration-200",
-          collapsed ? "lg:pl-[4.5rem]" : "lg:pl-64"
-        )}
-      >
+  return (
+    <div className="min-h-screen bg-ink-950">
+      <Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
+
+      <div className="flex min-h-screen flex-col lg:pl-56">
         <Topbar
-          title={meta.title}
-          subtitle={meta.subtitle}
           apiStatus={apiStatus}
+          lastUpdated={lastUpdated}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
           onMenuClick={() => setMobileOpen(true)}
         />
-        <main className="mx-auto w-full max-w-[1600px] flex-1 p-4 sm:p-6 lg:p-8">
-          <Outlet />
+        <main className="mx-auto w-full max-w-[1720px] flex-1 px-4 py-5 sm:px-5 lg:px-6">
+          <Outlet context={{ refreshSignal }} />
         </main>
-        <footer className="border-t border-slate-800/60 px-4 py-4 text-center text-xs text-slate-600 sm:px-6 lg:px-8">
-          Multi-Agent Engine · Document Intelligence
+        <footer className="border-t border-ink-700/60 px-6 py-2.5">
+          <p className="text-[10px] uppercase tracking-[0.14em] text-slate-600">
+            Multi-Agent Workflow Engine · FastAPI · Celery · RabbitMQ · Redis
+          </p>
         </footer>
       </div>
     </div>
